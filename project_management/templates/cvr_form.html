@@ -1,0 +1,352 @@
+{% extends "base.html" %} 
+{% block stylesheet %}
+    <link rel="stylesheet" type="text/css" href="/static/css/base.css" title="standard-css1" />
+    <link href="/static/css/cvr_forms.css" rel="stylesheet" type="text/css" />
+    <link href="/static/css/cvr.css" rel="stylesheet" type="text/css" />
+    <link href="/static/css/cvr_popup.css" rel="stylesheet" type="text/css" />
+{% endblock %}
+
+{% block script %}
+    <script type="application/javascript" language="JavaScript" src="/static/js/Validation.js"></script>
+    <script type="application/javascript" src="/static/js/jquery-1.3.2.min.js"></script>
+{% endblock %}
+
+{% load staticfiles %}
+{% block content %}
+{% block title %} Re-Use {% endblock %}
+{% block programcontent %} {% endblock %} 
+{% block programmenu %}{% endblock %} 
+{% block taskmenus %} {% endblock %}
+{% block contentdata %}
+
+<meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="//code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
+  
+  <script src="https://code.jquery.com/jquery-1.12.4.js"></script>
+  <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
+ 
+
+  <script>
+      $( function() {
+        var dateFormat = "mm/dd/yy",
+          from = $( "#from" )
+            .datepicker({
+              defaultDate: "+1w",
+              changeMonth: true,
+              numberOfMonths: 1
+            })
+            .on( "change", function() {
+              to.datepicker( "option", "minDate", getDate( this ) );
+            }),
+          to = $( "#to" ).datepicker({
+            defaultDate: "+1w",
+            changeMonth: true,
+            numberOfMonths: 1
+          })
+          .on( "change", function() {
+            from.datepicker( "option", "maxDate", getDate( this ) );
+          });
+     
+        function getDate( element ) {
+          var date;
+          try {
+            date = $.datepicker.parseDate( dateFormat, element.value );
+          } catch( error ) {
+            date = null;
+          }
+     
+          return date;
+        }
+      } );
+  </script>
+
+  <div id="myModal" class="modal">
+      <div class="modal-content">
+        <span class="close">&times;</span>
+        <center><lable class="lable">Reason For Reject</lable></center><br>
+        <textarea id="txt" class="area"></textarea><br>
+        <input id="reject" type="button"  name="reject" value ="Submit" onclick="onReject()">
+      </div>
+  </div>
+
+
+  <script>
+    function rejectionPopUp(){
+        var span = document.getElementsByClassName("close")[0];
+        var modal = document.getElementById('myModal');
+        modal.style.display = "block";
+        span.onclick = function() {
+        modal.style.display = "none";
+        }
+        window.onclick = function(event) {
+            if (event.target == modal) {
+                modal.style.display = "none";
+            }
+        }
+
+    }
+// using to csrf token
+    $.ajaxSetup({ 
+         beforeSend: function(xhr, settings) {
+             function getCookie(name) {
+                 var cookieValue = null;
+                 if (document.cookie && document.cookie != '') {
+                     var cookies = document.cookie.split(';');
+                     for (var i = 0; i < cookies.length; i++) {
+                         var cookie = jQuery.trim(cookies[i]);
+                         // Does this cookie string begin with the name we want?
+                         if (cookie.substring(0, name.length + 1) == (name + '=')) {
+                             cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                             break;
+                         }
+                     }
+                 }
+                 return cookieValue;
+             }
+             if (!(/^http:.*/.test(settings.url) || /^https:.*/.test(settings.url))) {
+                 // Only send the token to relative URLs i.e. locally.
+                 xhr.setRequestHeader("X-CSRFToken", getCookie('csrftoken'));
+             }
+         } 
+    });
+
+    function onReject(){
+        var reason = document.getElementById('txt').value;
+        $.ajax({
+              type: 'POST',
+              url: "/clientvisitreports/{{object.id}}/reject",
+              data: {
+                "reason": reason
+              },
+              dataType: "text",
+              success: function(resultData) { 
+                // alert(resultData);
+                window.location.href = '/clientvisitreports/';
+              }
+        });
+    }
+  </script>
+
+
+<form name="contacts" id="contacts" action="/clientvisitreports/create/" method="post">{% csrf_token %}
+
+    <center>
+
+    <table border="5">
+
+        <div class="form-style-3">
+        
+        <fieldset class = "cvr_form"><legend><b>CLIENT VISIT REPORT<b></legend>
+
+        <label for="field"><span>Project Name 
+            <span class="required">*</span></span>
+            {% if request.user.id == approve %}
+              <select name="project_name" required="true" style="width:240px;" disabled="disabled">
+                <option value="">Choose the Project Name</option>
+                  {% for project_name in project_names %}
+                      <option value="{{project_name.id}}" 
+                      {% if project_name.id == project %} selected="selected" {% endif %}> {{project_name.name}}
+                      </option>
+                  {% endfor %}
+              </select>
+            {% else %} 
+              <select name="project_name" required="true" style="width:240px;" >
+                <option value="">Choose the Project Name</option>
+                  {% for project_name in project_names %}
+                      <option value="{{project_name.id}}" 
+                      {% if project_name.id == project %} selected="selected" {% endif %}> {{project_name.name}}
+                      </option>
+                  {% endfor %}
+              </select>
+            {% endif %} 
+        </label>
+
+
+        <label for="field1"><span>Client Name 
+            <span class="required">*</span></span>
+            {% if request.user.id == approve %}
+              <select name="client_name" required="true" style="width:240px;" disabled="disabled">
+                <option value="">Choose the Client Name</option>
+                  {% for client_name in client_names %}
+                      <option value="{{client_name.id}}" 
+                      {% if client_name.id == client %} selected="selected" {% endif %}> {{client_name}}
+                      </option> 
+                  {% endfor %}
+              </select>
+            {% else %}
+              <select name="client_name" required="true" style="width:240px;">
+                <option value="">Choose the Client Name</option>
+                  {% for client_name in client_names %}
+                      <option value="{{client_name.id}}" 
+                      {% if client_name.id == client %} selected="selected" {% endif %}> {{client_name}}
+                      </option> 
+                  {% endfor %}
+              </select>
+            {% endif %} 
+        </label>
+
+        {% if object.id %}
+         <input type="hidden" name="object" value="{{object.id}}">
+        {% else %}
+         <input type="hidden" name="object" value="">
+        {% endif %}
+
+        {% if request.user.id == approve %}
+          <label for="field1"><span>Visit Location <span class="required">*</span></span><input type="text" class="input-field" name="visit_location" value={{object.visit_location}} required="true" disabled="disabled"/></label>
+        {% else %}
+          {% if object.visit_location %}
+          <label for="field1"><span>Visit Location <span class="required">*</span></span><input type="text" class="input-field" name="visit_location" value={{object.visit_location}} required="true"/></label>
+          {% else %}
+          <label for="field1"><span>Visit Location <span class="required">*</span></span><input type="text" class="input-field" name="visit_location" value="" required="true"/></label>
+          {% endif %}
+        {% endif %}
+
+        {% if request.user.id == approve %}
+          <label for="field1"><span>From Date <span class="required">*</span></span><input type="text" id="from" class="input-field" name="from_date" placeholder="MM-DD-YY" value={{object.from_date}} required disabled="disabled"/></label>
+        {% else %}
+          {% if object.from_date %}
+          <label for="field1"><span>From Date <span class="required">*</span></span><input type="text" id="from" class="input-field" name="from_date" placeholder="MM-DD-YY" value={{object.from_date}} required/></label>
+          {% else %}
+          <label for="field1"><span>From Date <span class="required">*</span></span><input type="text" id="from" class="input-field" name="from_date" placeholder="MM-DD-YY" value="" required/></label>
+          {% endif %}
+        {% endif %}
+
+        {% if request.user.id == approve %}
+          <label for="field1"><span>To Date <span class="required">*</span></span><input type="text" id="to" class="input-field" name="to_date" placeholder="MM-DD-YY" value={{object.to_date}} required disabled="disabled"/></label>
+        {% else %}
+          {% if object.to_date %}
+          <label for="field1"><span>To Date <span class="required">*</span></span><input type="text" id="to" class="input-field" name="to_date" placeholder="MM-DD-YY" value={{object.to_date}} required/></label>
+          {% else %}
+          <label for="field1"><span>To Date <span class="required">*</span></span><input type="text" id="to" class="input-field" name="to_date" placeholder="MM-DD-YY" value="" required/></label>
+          {% endif %}
+        {% endif %}
+
+        {% if request.user.id == approve %}
+          <label for="field6"><span>Purpose <span class="required">*</span></span><textarea name="reason_for_visit" value={{object.reason_for_visit}} class="textarea-field" required disabled="disabled">{{object.reason_for_visit}}</textarea></label>
+        {% else %}
+          {% if object.reason_for_visit %}
+          <label for="field6"><span>Purpose <span class="required">*</span></span><textarea name="reason_for_visit" value={{object.reason_for_visit}} class="textarea-field" required>{{object.reason_for_visit}}</textarea></label>
+          {% else %}
+          <label for="field6"><span>Purpose <span class="required">*</span></span><textarea name="reason_for_visit" class="textarea-field" required></textarea></label>
+          {% endif %}
+        {% endif %}
+
+        {% if request.user.id == approve %}
+          <label for="field6"><span>Actions Taken During The Visit <span class="required">*</span></span><textarea name="actions_taken_during_the_visit" value={{object.actions_taken_during_the_visit}} class="textarea-field" required disabled="disabled">{{object.actions_taken_during_the_visit}}</textarea></label>
+        {% else %}
+          {% if object.actions_taken_during_the_visit %}
+          <label for="field6"><span>Actions Taken During The Visit <span class="required">*</span></span><textarea name="actions_taken_during_the_visit" value={{object.actions_taken_during_the_visit}} class="textarea-field" required>{{object.actions_taken_during_the_visit}}</textarea></label>
+          {% else %}
+          <label for="field6"><span>Actions Taken During The Visit <span class="required">*</span></span><textarea name="actions_taken_during_the_visit" class="textarea-field" required></textarea></label>
+          {% endif %}
+        {% endif %}
+
+        {% if request.user.id == approve %}
+          <label for="field6"><span>Next Plan Of Action <span class="required">*</span></span><textarea name="next_plan_of_action" value={{object.next_plan_of_action}} class="textarea-field" required  disabled="disabled">{{object.next_plan_of_action}}</textarea></label>
+        {% else %}
+          {% if object.next_plan_of_action %}
+          <label for="field6"><span>Next Plan Of Action <span class="required">*</span></span><textarea name="next_plan_of_action" value={{object.next_plan_of_action}} class="textarea-field" required>{{object.next_plan_of_action}}</textarea></label>
+          {% else %}
+          <label for="field6"><span>Next Plan Of Action <span class="required">*</span></span><textarea name="next_plan_of_action" class="textarea-field" required></textarea></label>
+          {% endif %}
+        {% endif %} 
+
+        {% if request.user.id == approve %}
+          <label for="field6"><span>Comments </span><textarea name="comments" class="textarea-field" value={{object.comments}} disabled="disabled">{{object.comments}}</textarea></label>
+        {% else %}
+          {% if object.comments %}
+          <label for="field6"><span>Comments </span><textarea name="comments" class="textarea-field" value={{object.comments}}>{{object.comments}}</textarea></label>
+          {% else %}
+          <label for="field6"><span>Comments </span><textarea name="comments" class="textarea-field"></textarea></label>
+          {% endif %}
+        {% endif %}
+
+        <label for="field1"><span>Reporting Senior 
+            <span class="required">*</span></span>
+            {% if request.user.id == approve %}
+              <select name="reporting_senior_name" required="true" style="width:240px;" disabled="disabled">
+                <option value="">Choose the Reporting Senior</option>
+                  {% for reporting_senior_name in reporting_senior_names %}
+                      <option value="{{reporting_senior_name.id}}"
+                      {% if reporting_senior_name.id == approve %} selected="selected"{% endif %}> {{reporting_senior_name.username}}
+                  {% endfor %}
+              </select>
+            {% else %}
+              <select name="reporting_senior_name" required="true" style="width:240px;">
+                <option value="">Choose the Reporting Senior</option>
+                  {% for reporting_senior_name in reporting_senior_names %}
+                      <option value="{{reporting_senior_name.id}}"
+                      {% if reporting_senior_name.id == approve %} selected="selected"{% endif %}> {{reporting_senior_name.username}}
+                  {% endfor %}
+              </select>
+            {% endif %}              
+        </label>
+        </fieldset>
+        
+        </div>
+    </table>
+    {% csrf_token %}
+
+    {% if object.is_approved %}
+        <a href = "/clientvisitreports/">
+        <input type="button" value = "Cancel" name="cancel"></a>
+    {% else %}
+      {% if request.user.id == approve %}
+          <a href = "/clientvisitreports/{{object.id}}/approve">
+          <input type="button"  name="approve" value ="Approve"></a>
+          <input type="button" onClick=rejectionPopUp() name="reject" value="Reject">
+      {% else %}
+
+        {% if user.is_superuser %}
+          {% if prepared_by == login_user %}
+            {% if object.id %}
+                <input type="submit" name="add" value="Update">
+            {% else %}
+                <input type="submit" name="add" value="Submit">   
+            {% endif %}
+          {% endif %}
+          {% if prepared_by != login_user %}
+            {% if object.id %}
+              <a href = "/clientvisitreports/">
+              <input type="button" value = "Cancel" name="cancel"></a>
+            {% else %}
+              <input type="submit" name="add" value="Submit">   
+            {% endif %}
+          {% endif %}
+
+        {% else %}
+          {% if object.id %}
+              <input type="submit" name="add" value="Update">
+          {% else %}
+              <input type="submit" name="add" value="Submit">   
+          {% endif %}
+
+       {% endif %}
+
+      {% endif %}
+
+    {% endif %}
+
+
+  </center> 
+  <div class="footer-section">
+    <span class="mandatory">
+      <span>Note: Fields marked with<span class="required"> * </span>are mandatory</span></span>
+        
+  </div>
+                 
+</form>
+
+{% endblock %} 
+{% endblock %}
+
+
+
+
+<!-- 
+<script>
+if(!/[^a-zA-Z0-9]/.test($({{object.id}}).val())) {
+    $("#ErrorMsg").html("OK");
+}
+</script>         -->

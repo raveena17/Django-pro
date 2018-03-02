@@ -1,0 +1,9 @@
+Hello {{reporting_senior_name}},
+
+Please check the Client Visit Report by clicking on the following link:
+
+{{full_domain}} 
+
+
+Regards,
+{{request_user}}
